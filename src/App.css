@@ -1,0 +1,58 @@
+/* =========================================
+   🌐 إعدادات الهيكل الأساسي ومنع الاهتزاز
+   ========================================= */
+html,
+body,
+#root {
+  height: 100%;
+  max-width: 100vw;
+  overflow-x: hidden !important; /* يمنع الموقع من السباحة والاهتزاز يميناً ويساراً */
+  overflow-y: auto !important; /* يسمح بالسحب للأعلى والأسفل بحرية */
+  -webkit-overflow-scrolling: touch; /* يجعل السحب ناعماً جداً في الجوال */
+}
+
+/* =========================================
+   📱 حل مشاكل خانات الإدخال في الجوال (سفاري/آيفون/كروم)
+   ========================================= */
+input,
+textarea,
+select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  color-scheme: light !important;
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  -webkit-text-fill-color: #1e293b !important;
+  opacity: 1 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+@media screen and (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important; /* يمنع الآيفون من عمل زووم مزعج تلقائياً عند الكتابة */
+  }
+}
+
+/* =========================================
+   💳 تنسيق نموذج دفع ميسر (Moyasar) ليكون احترافياً
+   ========================================= */
+.mysr-form {
+  background-color: #ffffff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+  padding: 20px !important;
+  max-width: 100% !important;
+}
+
+.mysr-form input {
+  border: 1px solid #e2e8f0 !important;
+  background-color: #f8fafc !important;
+}
