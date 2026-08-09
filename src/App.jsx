@@ -1,9 +1,7 @@
-// ⚡ تقنية التحميل الكسول (Lazy Loading) للملفات الإدارية الثقيلة ⚡
 import React, {
   useState,
   useEffect,
   useCallback,
-  Fragment,
   Suspense,
 } from "react";
 const InvoicesView = React.lazy(() => import("./components/InvoicesView"));
@@ -28,177 +26,36 @@ const UpdatePasswordModal = React.lazy(() =>
   import("./components/UpdatePasswordModal"),
 );
 const MoyasarPayment = React.lazy(() => import("./components/MoyasarPayment"));
+import BookingTable from "./components/BookingTable";
+import Footer from "./components/Footer";
+import AppModals from "./components/AppModals";
+import Navbar from "./components/Navbar";
+import MyServicesTab from "./components/MyServicesTab";
+import ProviderTab from "./components/ProviderTab";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { supabase } from "./lib/supabase";
-import BookingRow from "./components/BookingRow";
 import { useTranslation } from "react-i18next";
 import { HelmetProvider } from "react-helmet-async";
 import { Capacitor } from "@capacitor/core";
-
-// --- التنسيقات العامة والجمالية ---
-const padS = { padding: "16px" };
-const thS = {
-  padding: "15px",
-  color: "#475569",
-  backgroundColor: "#f8fafc",
-  borderBottom: "2px solid #e2e8f0",
-  fontWeight: "900",
-  fontSize: "0.85rem",
-};
-const tdS = {
-  padding: "15px",
-  borderBottom: "1px solid #f1f5f9",
-  fontSize: "0.9rem",
-  color: "#334155",
-};
-const admBtn = (bg) => ({
-  backgroundColor: bg,
-  color: "white",
-  border: "none",
-  padding: "10px 16px",
-  borderRadius: "12px",
-  cursor: "pointer",
-  fontWeight: "bold",
-  fontSize: "0.85rem",
-  transition: "all 0.2s ease",
-  boxShadow: `0 4px 10px ${bg}40`,
-});
-const reportCard = (color, isActive) => ({
-  backgroundColor: "#fff",
-  padding: "20px",
-  borderRadius: "20px",
-  borderBottom: `4px solid ${color}`,
-  textAlign: "center",
-  boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
-  transition: "all 0.3s ease",
-});
-const addSkillBtn = {
-  background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)",
-  color: "white",
-  border: "none",
-  padding: "12px 25px",
-  borderRadius: "14px",
-  cursor: "pointer",
-  fontWeight: "900",
-  fontSize: "1rem",
-  boxShadow: "0 6px 15px rgba(124, 58, 237, 0.25)",
-};
-const cardS = {
-  backgroundColor: "#fff",
-  padding: "25px",
-  borderRadius: "24px",
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
-};
-const modalOverlay = {
-  position: "fixed",
-  inset: 0,
-  backgroundColor: "rgba(15, 23, 42, 0.6)",
-  backdropFilter: "blur(8px)",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  zIndex: 4000,
-  padding: "20px",
-};
-const modalContent = {
-  backgroundColor: "#fff",
-  padding: "30px",
-  borderRadius: "24px",
-  width: "100%",
-  maxWidth: "600px",
-  maxHeight: "85vh",
-  display: "flex",
-  flexDirection: "column",
-  boxShadow: "0 25px 50px rgba(0,0,0,0.15)",
-  overflowY: "auto",
-};
-const smInput = {
-  padding: "12px 15px",
-  borderRadius: "12px",
-  border: "1px solid #cbd5e1",
-  flex: "1 1 100px",
-  outline: "none",
-  fontFamily: "inherit",
-  fontSize: "0.9rem",
-  transition: "border-color 0.2s",
-};
-
-// ✨ دوال الجلب والحساب المحدثة ✨
-const fetchSafe = async (tableName) => {
-  try {
-    const { data, error } = await supabase.from(tableName).select("*");
-    return error ? [] : data || [];
-  } catch (err) {
-    return [];
-  }
-};
-
-const fetchSettingsSafe = async () => {
-  try {
-    const { data, error } = await supabase
-      .from("platform_settings")
-      .select("*")
-      .eq("id", 1)
-      .maybeSingle();
-    return error ? null : data;
-  } catch (err) {
-    return null;
-  }
-};
-
-const defaultLegalDocs = {
-  terms: {
-    title: "الشروط والأحكام والإقرار القانوني",
-    content:
-      "مرحباً بك في منصتنا.\n\n1. طبيعة عمل المنصة: المنصة عبارة عن وسيط تقني.\n2. المسؤولية تقع على مقدم الخدمة.",
-  },
-  privacy: {
-    title: "سياسة الخصوصية وحماية البيانات",
-    content:
-      "نحن نأخذ خصوصيتك على محمل الجد.\n\n1. يتم حفظ بياناتك بسرية تامة.",
-  },
-  refund: {
-    title: "سياسة الاسترجاع والإلغاء",
-    content: "المنصة لا تتدخل في النزاعات المالية المباشرة بين الأطراف.",
-  },
-};
-
-const calculateFinancials = (b, commissionRate) => {
-  const finalTotal =
-    b.proposed_price && Number(b.proposed_price) > 0
-      ? Number(b.proposed_price)
-      : (Number(b.offerings?.price) || 0) * (b.quantity || 1);
-
-  const isManual = b.is_manual_booking === true;
-  const platformCommission = isManual ? 0 : finalTotal * commissionRate;
-  const providerNet = finalTotal - platformCommission;
-
-  return {
-    baseTotal: finalTotal,
-    qty: b.quantity || 1,
-    additional: 0,
-    totalClientPrice: finalTotal,
-    platformCommission,
-    providerNet,
-  };
-};
-
-const sumByCurrency = (
-  bookingsArr,
-  commissionRate,
-  fieldName = "platformCommission",
-) => {
-  const totals = bookingsArr.reduce((acc, b) => {
-    const c = b.offerings?.currency || "USD";
-    const financials = calculateFinancials(b, commissionRate);
-    acc[c] = (acc[c] || 0) + financials[fieldName];
-    return acc;
-  }, {});
-  const entries = Object.entries(totals);
-  if (entries.length === 0) return "0.00";
-  return entries.map(([c, v]) => `${v.toFixed(2)} ${c}`).join(" | ");
-};
+import {
+  padS,
+  thS,
+  tdS,
+  admBtn,
+  reportCard,
+  addSkillBtn,
+  cardS,
+  modalOverlay,
+  modalContent,
+  smInput,
+} from "./lib/uiConstants";
+import {
+  fetchSafe,
+  fetchSettingsSafe,
+  defaultLegalDocs,
+  calculateFinancials,
+  sumByCurrency,
+} from "./lib/financials";
 
 // ✨ المكون الفرعي الذي يحتوي على محتوى التطبيق بالكامل ✨
 function MainAppContent() {
@@ -804,303 +661,6 @@ function MainAppContent() {
     setShowContactModal(true);
   };
 
-  const renderTable = (bookings, status, isProvider) => {
-    const filtered = bookings.filter((b) => b.status === status);
-    const titleMap = {
-      awaiting_pricing: {
-        text: t("status_awaiting_pricing", "طلبات بانتظار تسعيرك"),
-        icon: "💰",
-        color: "#d97706",
-        bg: "#fffbeb",
-        border: "#fde68a",
-      },
-      awaiting_client_approval: {
-        text: t("status_awaiting_client", "بانتظار موافقة العميل على السعر"),
-        icon: "⏳",
-        color: "#2563eb",
-        bg: "#eff6ff",
-        border: "#bfdbfe",
-      },
-      pending: {
-        text: t("status_pending", "طلبات قيد الانتظار"),
-        icon: "🆕",
-        color: "#d97706",
-        bg: "#fef3c7",
-        border: "#fde68a",
-      },
-      negotiating: {
-        text: t("status_negotiating", "بانتظار الموافقه"),
-        icon: "🤝",
-        color: "#d97706",
-        bg: "#fef3c7",
-        border: "#fde68a",
-      },
-      confirmed: {
-        text: t("status_confirmed", "حجوزات مؤكدة"),
-        icon: "👍",
-        color: "#059669",
-        bg: "#ecfdf5",
-        border: "#a7f3d0",
-      },
-      completed: {
-        text: t("status_completed", "حجوزات منفذة"),
-        icon: "✅",
-        color: "#15803d",
-        bg: "#f0fdf4",
-        border: "#bbf7d0",
-      },
-      cancelled: {
-        text: t("status_cancelled", "ملغاة"),
-        icon: "❌",
-        color: "#ef4444",
-        bg: "#fef2f2",
-        border: "#fecaca",
-      },
-    };
-    if (filtered.length === 0) return null;
-    const currentTitle = titleMap[status] || {
-      text: status,
-      icon: "📌",
-      color: "#475569",
-      bg: "#f1f5f9",
-      border: "#cbd5e1",
-    };
-
-    return (
-      <div key={status} style={{ marginBottom: "35px" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            marginBottom: "20px",
-          }}
-        >
-          <h4
-            style={{
-              fontSize: "1rem",
-              color: currentTitle.color,
-              backgroundColor: currentTitle.bg,
-              border: `1px solid ${currentTitle.border}`,
-              padding: "10px 20px",
-              borderRadius: "30px",
-              margin: "0",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              fontWeight: "900",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.03)",
-            }}
-          >
-            <span style={{ fontSize: "1.2rem" }}>{currentTitle.icon}</span>{" "}
-            {currentTitle.text}
-          </h4>
-          <div
-            style={{
-              flex: 1,
-              height: "1px",
-              backgroundColor: currentTitle.border,
-              margin: "0 20px",
-              opacity: 0.5,
-            }}
-          ></div>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "15px",
-            paddingBottom: "10px",
-          }}
-        >
-          {filtered.map((b) => {
-            const currency = b.offerings?.currency || "USD";
-            const { platformCommission } = calculateFinancials(
-              b,
-              commissionRate,
-            );
-            const hasComment =
-              b.review_text ||
-              b.review_comment ||
-              b.client_review ||
-              b.review ||
-              b.comment ||
-              b.feedback;
-            const isHidden =
-              b.is_comment_hidden || (hasComment && hasComment.includes("🚫"));
-
-            return (
-              <div
-                key={b.id}
-                style={{ display: "flex", flexDirection: "column" }}
-              >
-                <BookingRow
-                  booking={b}
-                  onRefresh={() => fetchAllData(session.user.id)}
-                  isProviderView={isProvider}
-                />
-
-                {isProvider &&
-                  b.status === "completed" &&
-                  hasComment &&
-                  !isHidden && (
-                    <div
-                      style={{
-                        backgroundColor: "#fffbeb",
-                        border: "1px solid #fde68a",
-                        borderTop: "none",
-                        padding: "10px 20px",
-                        borderBottomRightRadius: "16px",
-                        borderBottomLeftRadius: "16px",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                        gap: "10px",
-                        marginTop: "-15px",
-                        position: "relative",
-                        zIndex: 0,
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: "#b45309",
-                          fontSize: "0.85rem",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {t("client_comment", "💬 تعليق العميل: ")}"{hasComment}"
-                      </span>
-                      <button
-                        onClick={() => hideProviderComment(b.id)}
-                        style={{
-                          background: "#fef2f2",
-                          color: "#ef4444",
-                          border: "1px solid #fca5a5",
-                          padding: "6px 12px",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                          fontSize: "0.75rem",
-                          transition: "0.2s",
-                        }}
-                        onMouseOver={(e) =>
-                          (e.currentTarget.style.background = "#fee2e2")
-                        }
-                        onMouseOut={(e) =>
-                          (e.currentTarget.style.background = "#fef2f2")
-                        }
-                      >
-                        {t("hide_comment_btn", "🗑️ إخفاء التعليق")}
-                      </button>
-                    </div>
-                  )}
-
-                {isProvider && b.status === "completed" && isHidden && (
-                  <div
-                    style={{
-                      backgroundColor: "#f8fafc",
-                      border: "1px solid #e2e8f0",
-                      borderTop: "none",
-                      padding: "12px 20px",
-                      borderBottomRightRadius: "16px",
-                      borderBottomLeftRadius: "16px",
-                      color: "#64748b",
-                      fontSize: "0.85rem",
-                      fontStyle: "italic",
-                      marginTop: "-15px",
-                      position: "relative",
-                      zIndex: 0,
-                    }}
-                  >
-                    {t("comment_hidden_badge", "🚫 تم إخفاء التعليق")}
-                  </div>
-                )}
-
-                {isProvider && b.status === "completed" && (
-                  <div
-                    style={{
-                      backgroundColor: b.is_manual_booking
-                        ? "#f0fdf4"
-                        : b.is_commission_paid
-                        ? "#ecfdf5"
-                        : "#fef2f2",
-                      border: b.is_manual_booking
-                        ? "1px solid #bbf7d0"
-                        : b.is_commission_paid
-                        ? "1px solid #a7f3d0"
-                        : "1px solid #fca5a5",
-                      borderTop: "none",
-                      padding: "12px 20px",
-                      borderBottomRightRadius: "16px",
-                      borderBottomLeftRadius: "16px",
-                      color: b.is_manual_booking
-                        ? "#166534"
-                        : b.is_commission_paid
-                        ? "#047857"
-                        : "#b91c1c",
-                      fontWeight: "bold",
-                      fontSize: "0.85rem",
-                      marginTop: hasComment || isHidden ? "0px" : "-15px",
-                      position: "relative",
-                      zIndex: -1,
-                      display: "flex",
-                      flexWrap: "wrap",
-                      alignItems: "center",
-                      justifyContent: b.is_manual_booking
-                        ? "center"
-                        : "space-between",
-                    }}
-                  >
-                    {b.is_manual_booking ? (
-                      <span>
-                        {t(
-                          "manual_booking_notice",
-                          "📞 حجز خاص (خارجي) - الإيرادات لك بالكامل ولا توجد عمولة للمنصة",
-                        )}
-                      </span>
-                    ) : (
-                      <>
-                        <span>
-                          {t(
-                            "platform_commission_notice",
-                            "💰 عمولة المنصة لهذا الحجز: ",
-                          )}
-                          <strong
-                            style={{
-                              direction: "ltr",
-                              display: "inline-block",
-                              fontSize: "1rem",
-                            }}
-                          >
-                            {platformCommission.toFixed(2)} {currency}
-                          </strong>
-                        </span>
-                        <span
-                          style={{
-                            backgroundColor: "#fff",
-                            padding: "4px 10px",
-                            borderRadius: "8px",
-                            fontSize: "0.75rem",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                          }}
-                        >
-                          {b.is_commission_paid
-                            ? t("commission_paid", "✅ مسددة للمنصة")
-                            : t("commission_unpaid", "❌ مستحقة ولم تسدد بعد")}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
   const isSuperAdmin = userProfile?.role === "admin";
   const isSupervisor = userProfile?.role === "supervisor";
   const isFinancialManager = userProfile?.role === "financial_manager";
@@ -1179,7 +739,8 @@ function MainAppContent() {
         }
       `}</style>
 
-      {showLoginModal && !session && (
+      <AppModals>
+        {showLoginModal && !session && (
         <div style={{ ...modalOverlay, zIndex: 99999 }}>
           <div
             style={{
@@ -2298,7 +1859,10 @@ function MainAppContent() {
         </div>
       )}
 
-      {/* ✨ شريط التنقل (Navbar) العائم الرئيسي ✨ */}
+      </AppModals>
+
+      <Navbar>
+      {/* ✨ شريط التنقل (Navbar) العائم الرئيسي ✨ */
       <div
         style={{
           position: "sticky",
@@ -2904,6 +2468,8 @@ function MainAppContent() {
           transition: "0.3s",
         }}
       >
+      </Navbar>
+
         <Routes>
           <Route path="/payment-result" element={<Suspense fallback={<div style={{ textAlign: "center", padding: "80px", color: "#64748b" }}>{t("loading", "جاري التحميل...")}</div>}><PaymentResult /></Suspense>} />
           <Route
@@ -3094,6 +2660,7 @@ function MainAppContent() {
                       </Suspense>
                     )}
 
+                    <MyServicesTab>
                     {activeTab === "my_services" && (
                       <div
                         style={{
@@ -3435,6 +3002,9 @@ function MainAppContent() {
                       </div>
                     )}
 
+                    </MyServicesTab>
+
+                    <ProviderTab>
                     {activeTab === "provider" && (
                       <div
                         style={{
@@ -4048,7 +3618,17 @@ function MainAppContent() {
                             "confirmed",
                             "completed",
                             "cancelled",
-                          ].map((s) => renderTable(providerBookings, s, true))}
+                          ].map((s) => (
+                            <BookingTable
+                              key={s}
+                              bookings={providerBookings}
+                              status={s}
+                              isProvider={true}
+                              commissionRate={commissionRate}
+                              onRefresh={() => fetchAllData(session.user.id)}
+                              onHideComment={hideProviderComment}
+                            />
+                          ))}
                         </section>
 
                         <section style={cardS}>
@@ -4115,145 +3695,24 @@ function MainAppContent() {
                     )}
                   </>
                 )}
+                    </ProviderTab>
               </div>
             }
           />
         </Routes>
       </div>
 
-      <div
-        style={{
-          textAlign: "center",
-          padding: "30px 0",
-          marginTop: "50px",
-          borderTop: "2px solid #e2e8f0",
-          color: "#64748b",
-          fontSize: "0.9rem",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "15px",
+      <Footer
+        platformName={platformName}
+        licenseNumber={licenseNumber}
+        licenseName={licenseName}
+        licenseLink={licenseLink}
+        onShowLegalDoc={setActiveLegalDoc}
+        onContactAdmin={() => {
+          setContactForm({ ...contactForm, type: "general" });
+          setShowContactModal(true);
         }}
-      >
-        {licenseNumber && (
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              background: "#f8fafc",
-              border: "1px solid #cbd5e1",
-              padding: "10px 25px",
-              borderRadius: "16px",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.03)",
-            }}
-          >
-            <span style={{ fontSize: "1.3rem" }}>✅</span>
-            <span style={{ fontWeight: "bold", color: "#334155" }}>
-              {licenseName ||
-                t("verified_by_authorities", "موثق من الجهات الرسمية")}
-              :
-            </span>
-            <a
-              href={licenseLink || "#"}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                color: "#10b981",
-                textDecoration: "none",
-                fontWeight: "900",
-                fontSize: "1.2rem",
-                direction: "ltr",
-                display: "inline-block",
-              }}
-            >
-              {licenseNumber}
-            </a>
-          </div>
-        )}
-        <p style={{ margin: 0, fontWeight: "bold", fontSize: "1rem" }}>
-          © {new Date().getFullYear()} {platformName}{" "}
-          {t("all_rights_reserved", " (جميع الحقوق محفوظة )")}
-          <br />
-          email:bookonmap@hotmail.com ترخيص FL-822660150
-        </p>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: "20px",
-            flexWrap: "wrap",
-            backgroundColor: "#f8fafc",
-            padding: "12px 25px",
-            borderRadius: "20px",
-            border: "1px solid #f1f5f9",
-          }}
-        >
-          <span
-            onClick={() => setActiveLegalDoc("terms")}
-            style={{
-              cursor: "pointer",
-              color: "#4f46e5",
-              fontWeight: "bold",
-              transition: "0.2s",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.color = "#312e81")}
-            onMouseOut={(e) => (e.currentTarget.style.color = "#4f46e5")}
-          >
-            {t("terms_of_use", "شروط الاستخدام")}
-          </span>{" "}
-          <span style={{ color: "#cbd5e1" }}>|</span>
-          <span
-            onClick={() => setActiveLegalDoc("privacy")}
-            style={{
-              cursor: "pointer",
-              color: "#4f46e5",
-              fontWeight: "bold",
-              transition: "0.2s",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.color = "#312e81")}
-            onMouseOut={(e) => (e.currentTarget.style.color = "#4f46e5")}
-          >
-            {t("privacy_policy", "سياسة الخصوصية")}
-          </span>{" "}
-          <span style={{ color: "#cbd5e1" }}>|</span>
-          <span
-            onClick={() => setActiveLegalDoc("refund")}
-            style={{
-              cursor: "pointer",
-              color: "#4f46e5",
-              fontWeight: "bold",
-              transition: "0.2s",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.color = "#312e81")}
-            onMouseOut={(e) => (e.currentTarget.style.color = "#4f46e5")}
-          >
-            {t("refund_policies", "سياسات الدفع والاسترجاع")}
-          </span>{" "}
-          <span style={{ color: "#cbd5e1" }}>|</span>
-          <span
-            onClick={() => {
-              setContactForm({ ...contactForm, type: "general" });
-              setShowContactModal(true);
-            }}
-            style={{
-              cursor: "pointer",
-              color: "#d97706",
-              fontWeight: "bold",
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              transition: "0.2s",
-            }}
-            onMouseOver={(e) =>
-              (e.currentTarget.style.transform = "scale(1.05)")
-            }
-            onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          >
-            <span>✉️</span> {t("contact_admin_footer", "تواصل مع الإدارة")}
-          </span>
-        </div>
-      </div>
+      />
 
       {/* ✨ نافذة استعادة كلمة المرور الجديدة ✨ */}
       {showUpdatePassword && (
@@ -4264,122 +3723,6 @@ function MainAppContent() {
     </div>
   );
 }
-
-// ✨ بوابة الدخول السرية للمرحلة التجريبية (Beta Gate) ✨
-const BetaGate = ({ children }) => {
-  const { t } = useTranslation();
-  const [isUnlocked, setIsUnlocked] = useState(
-    localStorage.getItem("beta_unlocked") === "true",
-  );
-
-  const [passcode, setPasscode] = useState("");
-
-  if (isUnlocked) return children;
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        backgroundColor: "#0f172a",
-        fontFamily: "system-ui",
-        direction: "rtl",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "#1e293b",
-          padding: "40px",
-          borderRadius: "24px",
-          textAlign: "center",
-          boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
-          maxWidth: "400px",
-          width: "100%",
-          border: "1px solid #334155",
-        }}
-      >
-        <div style={{ fontSize: "4rem", marginBottom: "15px" }}>🚧</div>
-        <h2
-          style={{ color: "#f8fafc", margin: "0 0 10px 0", fontSize: "1.8rem" }}
-        >
-          {t("beta_closed_title", "منصة مغلقة مؤقتاً")}
-        </h2>
-        <p
-          style={{
-            color: "#94a3b8",
-            marginBottom: "30px",
-            fontSize: "0.95rem",
-            lineHeight: "1.6",
-          }}
-        >
-          {t(
-            "beta_closed_desc",
-            "المنصة حالياً في مرحلة الاختبار المغلق (Beta). يرجى إدخال رمز المرور السري المخصص للوصول.",
-          )}
-        </p>
-        <input
-          type="password"
-          placeholder={t("enter_beta_code", "أدخل الرمز هنا...")}
-          value={passcode}
-          onChange={(e) => setPasscode(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "15px",
-            borderRadius: "14px",
-            border: "1px solid #475569",
-            backgroundColor: "#0f172a",
-            color: "#fff",
-            outline: "none",
-            textAlign: "center",
-            fontSize: "1.2rem",
-            letterSpacing: "5px",
-            marginBottom: "20px",
-            boxSizing: "border-box",
-            transition: "0.2s",
-          }}
-          dir="ltr"
-          onFocus={(e) => (e.target.style.borderColor = "#3b82f6")}
-          onBlur={(e) => (e.target.style.borderColor = "#475569")}
-        />
-        <button
-          onClick={() => {
-            if (passcode === import.meta.env.VITE_BETA_PASSCODE) {
-              localStorage.setItem("beta_unlocked", "true");
-              setIsUnlocked(true);
-            } else {
-              alert(t("invalid_beta_code", "الرمز غير صحيح ❌"));
-              setPasscode("");
-            }
-          }}
-          style={{
-            width: "100%",
-            backgroundColor: "#3b82f6",
-            color: "#fff",
-            border: "none",
-            padding: "15px",
-            borderRadius: "14px",
-            fontWeight: "900",
-            fontSize: "1.1rem",
-            cursor: "pointer",
-            transition: "0.2s",
-          }}
-          onMouseOver={(e) =>
-            (e.currentTarget.style.backgroundColor = "#2563eb")
-          }
-          onMouseOut={(e) =>
-            (e.currentTarget.style.backgroundColor = "#3b82f6")
-          }
-        >
-          {t("enter_platform_btn", "دخول للمنصة 🔓")}
-        </button>
-      </div>
-    </div>
-  );
-};
 
 export default function AppWrapper() {
   return (
