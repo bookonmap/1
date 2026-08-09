@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabase";
 import BookingRow from "./BookingRow";
+import { getStoredValue, setStoredValue } from "../lib/native";
 
 export default function CalendarView({
   bookings = [],
@@ -28,12 +29,16 @@ export default function CalendarView({
   const [roleFilter, setRoleFilter] = useState("all");
 
   // ✨ ميزة تبديل التقويم (هجري / ميلادي) ✨
-  const [calendarType, setCalendarType] = useState(() => {
-    return localStorage.getItem("preferredCalendar") || "gregory";
-  });
+  const [calendarType, setCalendarType] = useState("gregory");
 
   useEffect(() => {
-    localStorage.setItem("preferredCalendar", calendarType);
+    getStoredValue("preferredCalendar").then((pref) => {
+      if (pref) setCalendarType(pref);
+    });
+  }, []);
+
+  useEffect(() => {
+    setStoredValue("preferredCalendar", calendarType);
   }, [calendarType]);
 
   const toggleCalendar = () => {

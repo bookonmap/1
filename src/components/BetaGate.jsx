@@ -1,14 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { getStoredValue, setStoredValue } from "../lib/native";
 
 export default function BetaGate({ children }) {
   const { t } = useTranslation();
-  const [isUnlocked, setIsUnlocked] = useState(
-    localStorage.getItem("beta_unlocked") === "true",
-  );
-
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [ready, setReady] = useState(false);
   const [passcode, setPasscode] = useState("");
 
+  useEffect(() => {
+    getStoredValue("beta_unlocked").then((val) => {
+      setIsUnlocked(val === "true");
+      setReady(true);
+    });
+  }, []);
+
+  if (!ready) return null;
   if (isUnlocked) return children;
 
   return (
@@ -83,7 +90,7 @@ export default function BetaGate({ children }) {
         <button
           onClick={() => {
             if (passcode === import.meta.env.VITE_BETA_PASSCODE) {
-              localStorage.setItem("beta_unlocked", "true");
+              setStoredValue("beta_unlocked", "true");
               setIsUnlocked(true);
             } else {
               alert(t("invalid_beta_code", "الرمز غير صحيح ❌"));

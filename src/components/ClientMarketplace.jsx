@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
+import { getCurrentPositionNative, isNativePlatform, openExternalUrl } from "../lib/native";
 
 // استيرادات مكتبة التقويم
 import DatePicker from "react-multi-date-picker";
@@ -224,6 +225,12 @@ export default function ClientMarketplace({
             href={part}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => {
+              if (isNativePlatform()) {
+                e.preventDefault();
+                openExternalUrl(part);
+              }
+            }}
             style={{
               color: "#fef08a",
               textDecoration: "underline",
@@ -500,17 +507,10 @@ export default function ClientMarketplace({
     });
   }, [bookingData, selected, t]);
 
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      return alert(
-        isRTL
-          ? "جهازك لا يدعم تحديد الموقع."
-          : "Your device doesn't support geolocation.",
-      );
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
+  const handleGetLocation = async () => {
+    try {
+      if (isNativePlatform()) {
+        const pos = await getCurrentPositionNative();
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         setBookingData({
@@ -518,16 +518,49 @@ export default function ClientMarketplace({
           gpsLocation: `https://maps.google.com/?q=${lat},${lng}`,
           manualLocation: "",
         });
-      },
-      (err) => {
+      } else {
+        if (!navigator.geolocation) {
+          return alert(
+            isRTL
+              ? "جهازك لا يدعم تحديد الموقع."
+              : "Your device doesn't support geolocation.",
+          );
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            setBookingData({
+              ...bookingData,
+              gpsLocation: `https://maps.google.com/?q=${lat},${lng}`,
+              manualLocation: "",
+            });
+          },
+          (err) => {
+            alert(
+              isRTL
+                ? "يرجى السماح بالوصول للـ GPS من إعدادات الجهاز 📍"
+                : "Please allow GPS access 📍",
+            );
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+        );
+      }
+    } catch (err) {
+      if (err.message === "PERMISSION_DENIED") {
         alert(
           isRTL
             ? "يرجى السماح بالوصول للـ GPS من إعدادات الجهاز 📍"
             : "Please allow GPS access 📍",
         );
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
-    );
+      } else {
+        alert(
+          isRTL
+            ? "تعذر تحديد الموقع، حاول مرة أخرى."
+            : "Could not get location, try again.",
+        );
+      }
+    }
   };
 
   const handleSuggestNextSlot = () => {
@@ -977,6 +1010,12 @@ export default function ClientMarketplace({
               href={announcementLink}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => {
+                if (isNativePlatform()) {
+                  e.preventDefault();
+                  openExternalUrl(announcementLink);
+                }
+              }}
               style={{ color: "#fff", textDecoration: "underline" }}
             >
               {announcementText} 🚀
@@ -1101,6 +1140,12 @@ export default function ClientMarketplace({
                     href={appleStoreLink}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => {
+                      if (isNativePlatform()) {
+                        e.preventDefault();
+                        openExternalUrl(appleStoreLink);
+                      }
+                    }}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -1124,6 +1169,12 @@ export default function ClientMarketplace({
                     href={playStoreLink}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => {
+                      if (isNativePlatform()) {
+                        e.preventDefault();
+                        openExternalUrl(playStoreLink);
+                      }
+                    }}
                     style={{
                       display: "flex",
                       alignItems: "center",

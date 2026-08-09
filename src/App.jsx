@@ -33,6 +33,7 @@ import { supabase } from "./lib/supabase";
 import { useTranslation } from "react-i18next";
 import { HelmetProvider } from "react-helmet-async";
 import { Capacitor } from "@capacitor/core";
+import { copyToClipboard } from "./lib/native";
 import {
   padS,
   thS,
@@ -384,6 +385,24 @@ function MainAppContent() {
       setShowLoginModal(false);
     }
   }, [session, showLoginModal]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let listener;
+    (async () => {
+      const { App } = await import("@capacitor/app");
+      listener = await App.addListener("backButton", ({ canGoBack }) => {
+        if (canGoBack) {
+          window.history.back();
+        } else {
+          App.exitApp();
+        }
+      });
+    })();
+    return () => {
+      if (listener) listener.remove();
+    };
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -3076,51 +3095,14 @@ function MainAppContent() {
                                 "https://www.bookonmap.com";
                               const storeUrl = `${platformDomain}/@${userProfile.username}`;
 
-                              if (
-                                navigator &&
-                                navigator.clipboard &&
-                                navigator.clipboard.writeText
-                              ) {
-                                navigator.clipboard
-                                  .writeText(storeUrl)
-                                  .then(() => {
-                                    alert(
-                                      t(
-                                        "store_link_copied",
-                                        "رائع! تم نسخ رابط متجرك بنجاح 📋✨\nالرابط هو:\n",
-                                      ) + storeUrl,
-                                    );
-                                  })
-                                  .catch((err) => {
-                                    const textArea =
-                                      document.createElement("textarea");
-                                    textArea.value = storeUrl;
-                                    document.body.appendChild(textArea);
-                                    textArea.select();
-                                    document.execCommand("copy");
-                                    document.body.removeChild(textArea);
-                                    alert(
-                                      t(
-                                        "store_link_copied",
-                                        "رائع! تم نسخ رابط متجرك بنجاح 📋✨\nالرابط هو:\n",
-                                      ) + storeUrl,
-                                    );
-                                  });
-                              } else {
-                                const textArea =
-                                  document.createElement("textarea");
-                                textArea.value = storeUrl;
-                                document.body.appendChild(textArea);
-                                textArea.select();
-                                document.execCommand("copy");
-                                document.body.removeChild(textArea);
+                              copyToClipboard(storeUrl).then(() => {
                                 alert(
                                   t(
                                     "store_link_copied",
                                     "رائع! تم نسخ رابط متجرك بنجاح 📋✨\nالرابط هو:\n",
                                   ) + storeUrl,
                                 );
-                              }
+                              });
                             }}
                             style={{
                               background:
