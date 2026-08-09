@@ -11,20 +11,28 @@ const AdminReports = React.lazy(() => import("./components/AdminReports"));
 const PlatformManagement = React.lazy(() =>
   import("./components/PlatformManagement"),
 );
-import PaymentResult from "./components/PaymentResult";
+const PaymentResult = React.lazy(() => import("./components/PaymentResult"));
+const Login = React.lazy(() => import("./components/Login"));
+const ProviderSchedule = React.lazy(() =>
+  import("./components/ProviderSchedule"),
+);
+const ClientMarketplace = React.lazy(() =>
+  import("./components/ClientMarketplace"),
+);
+const ProfileSettings = React.lazy(() =>
+  import("./components/ProfileSettings"),
+);
+const AddOffering = React.lazy(() => import("./components/AddOffering"));
+const CalendarView = React.lazy(() => import("./components/CalendarView"));
+const UpdatePasswordModal = React.lazy(() =>
+  import("./components/UpdatePasswordModal"),
+);
+const MoyasarPayment = React.lazy(() => import("./components/MoyasarPayment"));
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { supabase } from "./lib/supabase";
-import Login from "./components/Login";
 import BookingRow from "./components/BookingRow";
-import ProviderSchedule from "./components/ProviderSchedule";
-import ClientMarketplace from "./components/ClientMarketplace";
-import ProfileSettings from "./components/ProfileSettings";
-import AddOffering from "./components/AddOffering";
-import CalendarView from "./components/CalendarView";
 import { useTranslation } from "react-i18next";
 import { HelmetProvider } from "react-helmet-async";
-import UpdatePasswordModal from "./components/UpdatePasswordModal";
-import MoyasarPayment from "./components/MoyasarPayment";
 import { Capacitor } from "@capacitor/core";
 
 // --- التنسيقات العامة والجمالية ---
@@ -1242,7 +1250,9 @@ function MainAppContent() {
                   "يرجى تسجيل الدخول أو إنشاء حساب جديد لإتمام الحجز والتواصل مع المزودين.",
                 )}
               </p>
-              <Login />
+              <Suspense fallback={<div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>{t("loading", "جاري التحميل...")}</div>}>
+                <Login />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -1413,15 +1423,17 @@ function MainAppContent() {
       {showAddModal && (
         <div style={{ ...modalOverlay, zIndex: 99999 }}>
           <div style={modalContent}>
-            <AddOffering
-              session={session}
-              editData={editOfferingData}
-              onSuccess={() => {
-                setShowAddModal(false);
-                fetchAllData(session.user.id);
-              }}
-              onCancel={() => setShowAddModal(false)}
-            />
+            <Suspense fallback={<div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>{t("loading", "جاري التحميل...")}</div>}>
+              <AddOffering
+                session={session}
+                editData={editOfferingData}
+                onSuccess={() => {
+                  setShowAddModal(false);
+                  fetchAllData(session.user.id);
+                }}
+                onCancel={() => setShowAddModal(false)}
+              />
+            </Suspense>
           </div>
         </div>
       )}
@@ -1653,20 +1665,22 @@ function MainAppContent() {
                 </p>
 
                 {totalUnpaidNumeric > 0 ? (
-                  <MoyasarPayment
-                    amount={totalUnpaidNumeric}
-                    booking={{
-                      id: providerBookings
-                        .filter(
-                          (b) =>
-                            b.status === "completed" &&
-                            !b.is_commission_paid &&
-                            !b.is_manual_booking,
-                        )
-                        .map((b) => b.id)
-                        .join(","),
-                    }}
-                  />
+                  <Suspense fallback={<div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>{t("loading", "جاري التحميل...")}</div>}>
+                    <MoyasarPayment
+                      amount={totalUnpaidNumeric}
+                      booking={{
+                        id: providerBookings
+                          .filter(
+                            (b) =>
+                              b.status === "completed" &&
+                              !b.is_commission_paid &&
+                              !b.is_manual_booking,
+                          )
+                          .map((b) => b.id)
+                          .join(","),
+                      }}
+                    />
+                  </Suspense>
                 ) : (
                   <div
                     style={{
@@ -2891,24 +2905,26 @@ function MainAppContent() {
         }}
       >
         <Routes>
-          <Route path="/payment-result" element={<PaymentResult />} />
+          <Route path="/payment-result" element={<Suspense fallback={<div style={{ textAlign: "center", padding: "80px", color: "#64748b" }}>{t("loading", "جاري التحميل...")}</div>}><PaymentResult /></Suspense>} />
           <Route
             path="/:storeUsername"
             element={
-              <ClientMarketplace
-                session={session}
-                onRequireLogin={() => setShowLoginModal(true)}
-                checkProfileCompletion={checkProfileCompletion}
-                welcomeMsg={
-                  i18n.language === "ar" ? welcomeMsgAr : welcomeMsgEn
-                }
-                heroSubtitle={i18n.language === "ar" ? subtitleAr : subtitleEn}
-                announcementText={announcementText}
-                announcementLink={announcementLink}
-                isAnnouncementActive={isAnnouncementActive}
-                appleStoreLink={appleStoreLink}
-                playStoreLink={playStoreLink}
-              />
+              <Suspense fallback={<div style={{ textAlign: "center", padding: "80px", color: "#64748b" }}>{t("loading", "جاري التحميل...")}</div>}>
+                <ClientMarketplace
+                  session={session}
+                  onRequireLogin={() => setShowLoginModal(true)}
+                  checkProfileCompletion={checkProfileCompletion}
+                  welcomeMsg={
+                    i18n.language === "ar" ? welcomeMsgAr : welcomeMsgEn
+                  }
+                  heroSubtitle={i18n.language === "ar" ? subtitleAr : subtitleEn}
+                  announcementText={announcementText}
+                  announcementLink={announcementLink}
+                  isAnnouncementActive={isAnnouncementActive}
+                  appleStoreLink={appleStoreLink}
+                  playStoreLink={playStoreLink}
+                />
+              </Suspense>
             }
           />
           <Route
@@ -2918,33 +2934,37 @@ function MainAppContent() {
                 <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
                 {activeTab === "market" && (
-                  <ClientMarketplace
-                    session={session}
-                    onRequireLogin={() => setShowLoginModal(true)}
-                    checkProfileCompletion={checkProfileCompletion}
-                    welcomeMsg={
-                      i18n.language === "ar" ? welcomeMsgAr : welcomeMsgEn
-                    }
-                    heroSubtitle={
-                      i18n.language === "ar" ? subtitleAr : subtitleEn
-                    }
-                    announcementText={announcementText}
-                    announcementLink={announcementLink}
-                    isAnnouncementActive={isAnnouncementActive}
-                    appleStoreLink={appleStoreLink}
-                    playStoreLink={playStoreLink}
-                  />
+                  <Suspense fallback={<div style={{ textAlign: "center", padding: "80px", color: "#64748b" }}>{t("loading", "جاري التحميل...")}</div>}>
+                    <ClientMarketplace
+                      session={session}
+                      onRequireLogin={() => setShowLoginModal(true)}
+                      checkProfileCompletion={checkProfileCompletion}
+                      welcomeMsg={
+                        i18n.language === "ar" ? welcomeMsgAr : welcomeMsgEn
+                      }
+                      heroSubtitle={
+                        i18n.language === "ar" ? subtitleAr : subtitleEn
+                      }
+                      announcementText={announcementText}
+                      announcementLink={announcementLink}
+                      isAnnouncementActive={isAnnouncementActive}
+                      appleStoreLink={appleStoreLink}
+                      playStoreLink={playStoreLink}
+                    />
+                  </Suspense>
                 )}
 
                 {session && (
                   <>
                     {activeTab === "calendar" && (
                       <div style={cardS}>
-                        <CalendarView
-                          bookings={allUserBookings}
-                          userId={session.user.id}
-                          onRefresh={() => fetchAllData(session.user.id)}
-                        />
+                        <Suspense fallback={<div style={{ textAlign: "center", padding: "50px", color: "#64748b", fontWeight: "bold" }}>{t("loading", "جاري التحميل...")}</div>}>
+                          <CalendarView
+                            bookings={allUserBookings}
+                            userId={session.user.id}
+                            onRefresh={() => fetchAllData(session.user.id)}
+                          />
+                        </Suspense>
                       </div>
                     )}
 
@@ -2977,10 +2997,12 @@ function MainAppContent() {
 
                     {activeTab === "profile" && (
                       <div style={cardS}>
-                        <ProfileSettings
-                          session={session}
-                          onUpdate={() => fetchAllData(session.user.id)}
-                        />
+                        <Suspense fallback={<div style={{ textAlign: "center", padding: "50px", color: "#64748b", fontWeight: "bold" }}>{t("loading", "جاري التحميل...")}</div>}>
+                          <ProfileSettings
+                            session={session}
+                            onUpdate={() => fetchAllData(session.user.id)}
+                          />
+                        </Suspense>
                       </div>
                     )}
 
@@ -4080,12 +4102,14 @@ function MainAppContent() {
                               </p>
                             </div>
                           </div>
-                          <ProviderSchedule
-                            bookings={clientBookings}
-                            session={session}
-                            fetchBookings={() => fetchAllData(session.user.id)}
-                            isProviderView={false}
-                          />
+                          <Suspense fallback={<div style={{ textAlign: "center", padding: "50px", color: "#64748b", fontWeight: "bold" }}>{t("loading", "جاري التحميل...")}</div>}>
+                            <ProviderSchedule
+                              bookings={clientBookings}
+                              session={session}
+                              fetchBookings={() => fetchAllData(session.user.id)}
+                              isProviderView={false}
+                            />
+                          </Suspense>
                         </section>
                       </div>
                     )}
@@ -4233,7 +4257,9 @@ function MainAppContent() {
 
       {/* ✨ نافذة استعادة كلمة المرور الجديدة ✨ */}
       {showUpdatePassword && (
-        <UpdatePasswordModal onClose={() => setShowUpdatePassword(false)} />
+        <Suspense fallback={<div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>{t("loading", "جاري التحميل...")}</div>}>
+          <UpdatePasswordModal onClose={() => setShowUpdatePassword(false)} />
+        </Suspense>
       )}
     </div>
   );
