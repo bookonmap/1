@@ -28,10 +28,6 @@ const UpdatePasswordModal = React.lazy(() =>
 const MoyasarPayment = React.lazy(() => import("./components/MoyasarPayment"));
 import BookingTable from "./components/BookingTable";
 import Footer from "./components/Footer";
-import AppModals from "./components/AppModals";
-import Navbar from "./components/Navbar";
-import MyServicesTab from "./components/MyServicesTab";
-import ProviderTab from "./components/ProviderTab";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 import { useTranslation } from "react-i18next";
@@ -739,8 +735,7 @@ function MainAppContent() {
         }
       `}</style>
 
-      <AppModals>
-        {showLoginModal && !session && (
+      {showLoginModal && !session && (
         <div style={{ ...modalOverlay, zIndex: 99999 }}>
           <div
             style={{
@@ -1859,10 +1854,7 @@ function MainAppContent() {
         </div>
       )}
 
-      </AppModals>
-
-      <Navbar>
-      {/* ✨ شريط التنقل (Navbar) العائم الرئيسي ✨ */
+      {/* ✨ شريط التنقل (Navbar) العائم الرئيسي ✨ */}
       <div
         style={{
           position: "sticky",
@@ -2468,8 +2460,6 @@ function MainAppContent() {
           transition: "0.3s",
         }}
       >
-      </Navbar>
-
         <Routes>
           <Route path="/payment-result" element={<Suspense fallback={<div style={{ textAlign: "center", padding: "80px", color: "#64748b" }}>{t("loading", "جاري التحميل...")}</div>}><PaymentResult /></Suspense>} />
           <Route
@@ -2660,7 +2650,6 @@ function MainAppContent() {
                       </Suspense>
                     )}
 
-                    <MyServicesTab>
                     {activeTab === "my_services" && (
                       <div
                         style={{
@@ -3002,9 +2991,6 @@ function MainAppContent() {
                       </div>
                     )}
 
-                    </MyServicesTab>
-
-                    <ProviderTab>
                     {activeTab === "provider" && (
                       <div
                         style={{
@@ -3695,7 +3681,6 @@ function MainAppContent() {
                     )}
                   </>
                 )}
-                    </ProviderTab>
               </div>
             }
           />
