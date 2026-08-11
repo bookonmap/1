@@ -40,7 +40,7 @@ export const reportCard = (color, isActive) => ({
 });
 
 export const addSkillBtn = {
-  background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)",
+  background: "linear-gradient(135deg, #0f766e 0%, #0f4c81 100%)",
   color: "white",
   border: "none",
   padding: "12px 25px",
@@ -48,7 +48,7 @@ export const addSkillBtn = {
   cursor: "pointer",
   fontWeight: "900",
   fontSize: "1rem",
-  boxShadow: "0 6px 15px rgba(124, 58, 237, 0.25)",
+  boxShadow: "0 6px 15px rgba(15, 118, 110, 0.25)",
 };
 
 export const cardS = {

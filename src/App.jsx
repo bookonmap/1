@@ -729,6 +729,7 @@ function MainAppContent() {
 
   return (
     <div
+      className="app-shell"
       style={{
         padding: "15px",
         paddingTop: "40px",
@@ -1875,6 +1876,7 @@ function MainAppContent() {
 
       {/* ✨ شريط التنقل (Navbar) العائم الرئيسي ✨ */}
       <div
+        className="app-navbar"
         style={{
           position: "sticky",
           top: "10px",
@@ -2472,6 +2474,7 @@ function MainAppContent() {
       </div>
 
       <div
+        className="app-content"
         style={{
           flex: 1,
           filter: mustAcceptTerms ? "blur(5px)" : "none",
@@ -3669,7 +3672,8 @@ function MainAppContent() {
         </Routes>
       </div>
 
-      <Footer
+      <div className="app-footer-wrap">
+        <Footer
         platformName={platformName}
         licenseNumber={licenseNumber}
         licenseName={licenseName}
@@ -3679,7 +3683,8 @@ function MainAppContent() {
           setContactForm({ ...contactForm, type: "general" });
           setShowContactModal(true);
         }}
-      />
+        />
+      </div>
 
       {/* ✨ نافذة استعادة كلمة المرور الجديدة ✨ */}
       {showUpdatePassword && (
