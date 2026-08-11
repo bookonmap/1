@@ -155,16 +155,16 @@ export default function CalendarView({
           ? "مؤكد"
           : "Confirmed"
         : b.status === "completed"
-        ? isRTL
-          ? "مكتمل"
-          : "Completed"
-        : b.status === "cancelled"
-        ? isRTL
-          ? "ملغى"
-          : "Cancelled"
-        : isRTL
-        ? "قيد المعالجة"
-        : "Pending";
+          ? isRTL
+            ? "مكتمل"
+            : "Completed"
+          : b.status === "cancelled"
+            ? isRTL
+              ? "ملغى"
+              : "Cancelled"
+            : isRTL
+              ? "قيد المعالجة"
+              : "Pending";
 
     const qty = b.quantity || 1;
     const price = Number(b.offerings?.price) || 0;
@@ -486,21 +486,21 @@ export default function CalendarView({
                   s === "ok"
                     ? "linear-gradient(135deg, #10b981, #059669)"
                     : s === "wait"
-                    ? "linear-gradient(135deg, #f59e0b, #d97706)"
-                    : "#ffffff",
+                      ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                      : "#ffffff",
 
                 color: hasBookings
                   ? "white"
                   : isThisDay
-                  ? "#7c3aed"
-                  : "#334155",
+                    ? "#7c3aed"
+                    : "#334155",
 
                 border: d
                   ? isThisDay && !hasBookings
                     ? "2px solid #c4b5fd"
                     : hasBookings
-                    ? "none"
-                    : "1px solid #f1f5f9"
+                      ? "none"
+                      : "1px solid #f1f5f9"
                   : "none",
 
                 opacity: d ? 1 : 0,
@@ -904,29 +904,17 @@ export default function CalendarView({
                           marginTop: "20px",
                           borderTop: "1px solid #f1f5f9",
                           paddingTop: "20px",
-                          overflowX: "auto",
                         }}
                       >
-                        <table
-                          style={{
-                            width: "100%",
-                            borderCollapse: "collapse",
-                            fontSize: "0.8rem",
-                            backgroundColor: "#fff",
+                        <BookingRow
+                          booking={b}
+                          onRefresh={() => {
+                            if (onRefresh) onRefresh();
+                            else window.location.reload();
                           }}
-                        >
-                          <tbody style={{ textAlign: "center" }}>
-                            <BookingRow
-                              booking={b}
-                              onRefresh={() => {
-                                if (onRefresh) onRefresh();
-                                else window.location.reload();
-                              }}
-                              isProviderView={isProvider}
-                              allowTextReviews={allowTextReviews}
-                            />
-                          </tbody>
-                        </table>
+                          isProviderView={isProvider}
+                          allowTextReviews={allowTextReviews}
+                        />
                       </div>
                     )}
                   </div>

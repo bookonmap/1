@@ -142,12 +142,10 @@ export default function AddOffering({
         t("city_required", "الرجاء تحديد المدينة لتسهيل وصول العملاء لخدمتك."),
       );
     }
-    if (!legalAccepted)
-      return alert(
-        t("legal_required", "يجب الموافقة على الإقرار القانوني أولاً."),
-      );
+
     if (availableDays.length === 0)
       return alert(t("days_required", "يجب اختيار يوم عمل واحد على الأقل."));
+
     if (
       ["period", "daily", "monthly", "yearly", "free"].includes(pricingModel) &&
       !durationDetails
@@ -450,15 +448,13 @@ export default function AddOffering({
 
             <div style={{ marginBottom: "15px" }}>
               <label style={labelS}>
-                {t("service_category", "القسم التصنيفي")}{" "}
-                <span style={{ color: "#ef4444" }}>*</span>
+                {t("service_category", "القسم التصنيفي (اختياري)")}
               </label>
               <select
                 className="smart-input"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 style={inputS}
-                required
               >
                 {dbCategories.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -470,11 +466,9 @@ export default function AddOffering({
 
             <div>
               <label style={labelS}>
-                {t("service_description", "وصف الخدمة (التفاصيل والمميزات)")}{" "}
-                <span style={{ color: "#ef4444" }}>*</span>
+                {t("service_description", "وصف الخدمة التفصيلي (اختياري)")}
               </label>
               <textarea
-                required
                 className="smart-input"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -1065,7 +1059,6 @@ export default function AddOffering({
             >
               <input
                 type="checkbox"
-                required
                 checked={legalAccepted}
                 onChange={(e) => setLegalAccepted(e.target.checked)}
                 style={{
@@ -1084,9 +1077,8 @@ export default function AddOffering({
               >
                 {t(
                   "legal_agreement_text",
-                  "أقر وأتعهد بأنني أتحمل المسؤولية القانونية والمهنية الكاملة عن تقديم ومشروعية هذه الخدمة، وأوافق على أن المنصة تُعتبر وسيطاً تقنياً وإعلانياً فقط، وتخلي مسؤوليتها تماماً عن جودة التنفيذ أو أي نزاعات تنشأ مع العملاء.",
-                )}{" "}
-                <span style={{ color: "#ef4444" }}>*</span>
+                  "إقرار: إضافة هذه الخدمة تعني أنك تتحمل المسؤولية القانونية والمهنية الكاملة عن تقديمها ومشروعيتها، وتوافق على أن المنصة تُعتبر وسيطاً تقنياً وإعلانياً فقط وتخلي مسؤوليتها تماماً عن جودة التنفيذ.",
+                )}
               </span>
             </label>
           </div>
