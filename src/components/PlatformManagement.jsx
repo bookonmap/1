@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { useTranslation } from "react-i18next"; // مكتبة الترجمة لاستخراج لغة المستخدم
+import { useTranslation } from "react-i18next";
 
 // --- التنسيقات والدوال المساعدة ---
 const thS = {
@@ -71,7 +71,6 @@ const smInput = {
   transition: "border-color 0.2s",
 };
 
-// تنسيقات التمرير الأفقي لحل مشكلة الجوال
 const tableWrapperS = {
   width: "100%",
   overflowX: "auto",
@@ -82,7 +81,7 @@ const tableWrapperS = {
 };
 const responsiveTableS = {
   width: "100%",
-  minWidth: "850px", // إجبار الجدول على التمرير في الشاشات الصغيرة
+  minWidth: "850px",
   borderCollapse: "collapse",
   textAlign: "right",
 };
@@ -187,7 +186,6 @@ export default function PlatformManagement({
   const [inputAppleStore, setInputAppleStore] = useState(appleStoreLink || "");
   const [inputPlayStore, setInputPlayStore] = useState(playStoreLink || "");
 
-  // حقول السياسات المنفصلة (عربي وإنجليزي)
   const [inputTermsAr, setInputTermsAr] = useState("");
   const [inputTermsEn, setInputTermsEn] = useState("");
   const [inputPrivacyAr, setInputPrivacyAr] = useState("");
@@ -199,7 +197,6 @@ export default function PlatformManagement({
   const [newCatEn, setNewCatEn] = useState("");
   const [newCatIcon, setNewCatIcon] = useState("");
 
-  // حالات تعديل الأقسام
   const [isEditCatModalOpen, setIsEditCatModalOpen] = useState(false);
   const [editingCatId, setEditingCatId] = useState(null);
   const [editCatForm, setEditCatForm] = useState({
@@ -207,9 +204,6 @@ export default function PlatformManagement({
     label_en: "",
     icon: "",
   });
-
-  const [messagingUserId, setMessagingUserId] = useState(null);
-  const [adminMessageText, setAdminMessageText] = useState("");
 
   const [isForceEditModalOpen, setIsForceEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -231,9 +225,9 @@ export default function PlatformManagement({
 
   const fetchAdminData = async () => {
     try {
-      const [u, cats, settsData, rawRevs, rawOffs, rawBks, rawMsgs] =
+      let [u, cats, settsData, rawRevs, rawOffs, rawBks, rawMsgs] =
         await Promise.all([
-          fetchSafe("profiles"),
+          fetchSafe("admin_user_list"),
           fetchSafe("categories"),
           fetchSettingsSafe(),
           fetchSafe("reviews"),
@@ -241,6 +235,10 @@ export default function PlatformManagement({
           fetchSafe("bookings"),
           fetchSafe("contact_messages"),
         ]);
+
+      if (!u || u.length === 0) {
+        u = await fetchSafe("profiles");
+      }
 
       setUsers(
         u.sort((a, b) => (a.full_name || "").localeCompare(b.full_name || "")),
@@ -734,6 +732,60 @@ export default function PlatformManagement({
         .eq("id", id);
       fetchAdminData();
     } catch (err) {}
+  };
+
+  // 💡 الميزة المالية المحدثة والذكية: اعتماد الإيصال وتصفير مديونية المستخدم عبر خدماته
+  const handleApproveCommission = async (messageObject) => {
+    if (
+      window.confirm(
+        t(
+          "confirm_approve_commission",
+          "هل أنت متأكد من اعتماد هذا الإيصال؟ سيتم إخفاء المطالبة وتصفير مديونية هذا المستخدم فوراً.",
+        ),
+      )
+    ) {
+      try {
+        // 1. أولاً: نجلب كل الخدمات (offerings) التي يملكها هذا المزود
+        const { data: offerings, error: offError } = await supabase
+          .from("offerings")
+          .select("id")
+          .eq("provider_id", messageObject.user_id);
+
+        if (offError) throw offError;
+
+        // نستخرج أرقام الخدمات في مصفوفة (Array)
+        const offeringIds = offerings.map((o) => o.id);
+
+        if (offeringIds.length > 0) {
+          // 2. تحديث الحجوزات المرتبطة بخدمات هذا المزود لتصبح "مدفوعة"
+          const { error: bookingError } = await supabase
+            .from("bookings")
+            .update({ is_commission_paid: true })
+            .in("offering_id", offeringIds) // نبحث عن الحجوزات التابعة لخدماته فقط
+            .eq("is_commission_paid", false);
+
+          if (bookingError) throw bookingError;
+        }
+
+        // 3. إخفاء رسالة المطالبة من لوحة الإدارة (جعلها مقروءة)
+        const { error: msgError } = await supabase
+          .from("contact_messages")
+          .update({ is_read: true })
+          .eq("id", messageObject.id);
+
+        if (msgError) throw msgError;
+
+        alert(
+          t(
+            "commission_approved_success",
+            "تم اعتماد الإيصال وتصفير مديونية المستخدم بنجاح ✅",
+          ),
+        );
+        fetchAdminData(); // تحديث الجدول فوراً
+      } catch (err) {
+        alert(t("error_prefix", "خطأ: ") + err.message);
+      }
+    }
   };
 
   const renderMessageWithLinks = (text) => {
@@ -1418,7 +1470,7 @@ export default function PlatformManagement({
         </div>
       )}
 
-      {/* ================= تبويب السياسات (محدث بأعمدة منفصلة: عربي وإنجليزي) ================= */}
+      {/* ================= تبويب السياسات ================= */}
       {activeAdminTab === "policies" && !isFin && (
         <div
           style={{
@@ -1862,7 +1914,7 @@ export default function PlatformManagement({
         </div>
       )}
 
-      {/* ================= تبويب المستخدمين ================= */}
+      {/* ================= تبويب المستخدمين (مع عرض الإيميلات إن وجدت) ================= */}
       {activeAdminTab === "users" && !isFin && (
         <div
           style={{
@@ -1901,7 +1953,7 @@ export default function PlatformManagement({
             <table style={responsiveTableS}>
               <thead>
                 <tr style={{ backgroundColor: "#f1f5f9", textAlign: "center" }}>
-                  <th style={thS}>{t("th_user", "المستخدم")}</th>
+                  <th style={thS}>{t("th_user", "المستخدم والإيميل")}</th>
                   <th style={thS}>{t("th_role", "الصلاحية")}</th>
                   <th style={thS}>{t("th_status", "الحالة")}</th>
                   <th style={thS}>
@@ -1918,12 +1970,31 @@ export default function PlatformManagement({
                       textAlign: "center",
                     }}
                   >
-                    <td style={tdS}>
+                    <td style={{ ...tdS, textAlign: isRTL ? "right" : "left" }}>
                       <strong>{u.full_name}</strong>
                       <br />
                       <span style={{ fontSize: "0.8rem", color: "#64748b" }}>
                         @{u.username}
                       </span>
+                      {u.email && (
+                        <>
+                          <br />
+                          <span
+                            dir="ltr"
+                            style={{
+                              fontSize: "0.78rem",
+                              color: "#3b82f6",
+                              backgroundColor: "#eff6ff",
+                              padding: "2px 6px",
+                              borderRadius: "6px",
+                              display: "inline-block",
+                              marginTop: "5px",
+                            }}
+                          >
+                            ✉️ {u.email}
+                          </span>
+                        </>
+                      )}
                     </td>
                     <td style={tdS}>
                       <select
@@ -2213,9 +2284,10 @@ export default function PlatformManagement({
                           gap: "5px",
                         }}
                       >
+                        {/* 💡 هنا زر الاعتماد المطور */}
                         {m.type === "receipt" && !m.is_read && (
                           <button
-                            onClick={() => handleApproveCommission(m.id)}
+                            onClick={() => handleApproveCommission(m)}
                             style={{ ...admBtn("#10b981"), width: "100%" }}
                           >
                             💰{" "}
@@ -2421,7 +2493,7 @@ export default function PlatformManagement({
                 onClick={handleSaveEditCategory}
                 style={{ flex: 1, ...admBtn("#3b82f6") }}
               >
-                💾 {t("save_edits_btn", "حفظ التعديلات")}
+                {t("save_edits_btn", "حفظ التعديلات")}
               </button>
               <button
                 onClick={() => {
